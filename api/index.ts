@@ -2,6 +2,7 @@ import triageHandler from "./triage";
 import configHandler from "./config";
 import historyHandler from "./history";
 import healthHandler from "./health";
+import { sendApiResponse } from "../src/lib/triageCore";
 
 export default async function handler(req: any, res: any) {
   const url = req.url || "";
@@ -25,5 +26,5 @@ export default async function handler(req: any, res: any) {
     return healthHandler(req, res);
   }
 
-  res.status(404).json({ error: `API route ${url} not found.` });
+  sendApiResponse(res, 404, { error: `API route ${url} not found.` });
 }

@@ -75,12 +75,16 @@ export default function App() {
         data = JSON.parse(responseText);
       } catch {
         throw new Error(
-          `Server returned an invalid response (${response.status} ${response.statusText}). If deploying on Vercel, ensure the API routes or vercel.json is deployed.`
+          `Server returned non-JSON response (${response.status} ${response.statusText || ''}): ${
+            responseText ? responseText.slice(0, 200) : 'No response body'
+          }`
         );
       }
 
       if (!response.ok || data.error) {
-        throw new Error(data.error || 'Failed to triage messages. Please try again.');
+        const errorMsg = data.error || 'Failed to triage messages. Please try again.';
+        const detailsMsg = (data as any).details ? ` - ${(data as any).details}` : '';
+        throw new Error(`${errorMsg}${detailsMsg}`);
       }
 
       const sorted = sortMessagesByPriority(data.messages);

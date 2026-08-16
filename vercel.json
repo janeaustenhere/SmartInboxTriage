@@ -7,11 +7,7 @@
       "destination": "/api/history?id=:id"
     },
     {
-      "source": "/api/:match*",
-      "destination": "/api/:match*"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]

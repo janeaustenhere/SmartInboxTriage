@@ -1,12 +1,10 @@
-import { getConfigStatus } from "../src/lib/triageCore";
+import { getConfigStatus, sendApiResponse } from "../src/lib/triageCore";
 
 export default function handler(req: any, res: any) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
   if (req.method === "OPTIONS") {
-    res.status(200).end();
+    sendApiResponse(res, 200, { ok: true });
     return;
   }
 
-  res.status(200).json(getConfigStatus());
+  sendApiResponse(res, 200, getConfigStatus());
 }

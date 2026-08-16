@@ -1,25 +1,32 @@
-import { getHistoryList, getHistoryItem } from "../src/lib/triageCore";
+import { getHistoryList, getHistoryItem, sendApiResponse } from "../src/lib/triageCore";
 
 export default async function handler(req: any, res: any) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
   if (req.method === "OPTIONS") {
-    res.status(200).end();
+    sendApiResponse(res, 200, { ok: true });
     return;
   }
 
   const runId = req.query?.id || req.query?.run_id;
 
   if (runId && typeof runId === "string") {
-    const item = await getHistoryItem(runId);
-    if (!item) {
-      res.status(404).json({ error: "Triage run not found." });
+    try {
+      const item = await getHistoryItem(runId);
+      if (!item) {
+        sendApiResponse(res, 404, { error: "Triage run not found." });
+        return;
+      }
+      sendApiResponse(res, 200, item);
+      return;
+    } catch (e: any) {
+      sendApiResponse(res, 500, { error: e?.message || "Failed to load triage run." });
       return;
     }
-    res.status(200).json(item);
-    return;
   }
 
-  const history = await getHistoryList();
-  res.status(200).json(history);
+  try {
+    const history = await getHistoryList();
+    sendApiResponse(res, 200, history);
+  } catch (e: any) {
+    sendApiResponse(res, 500, { error: e?.message || "Failed to fetch history." });
+  }
 }

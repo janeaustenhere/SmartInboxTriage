@@ -23,12 +23,67 @@ export interface CachedRun {
 
 export const localRunCache: CachedRun[] = [];
 
+export function generateUUID(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+export async function parseJsonBody(req: any): Promise<any> {
+  if (req.body) {
+    if (typeof req.body === "string") {
+      try {
+        return JSON.parse(req.body);
+      } catch {
+        return {};
+      }
+    }
+    return req.body;
+  }
+  return new Promise((resolve) => {
+    let data = "";
+    req.on("data", (chunk: any) => {
+      data += chunk;
+    });
+    req.on("end", () => {
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch {
+        resolve({});
+      }
+    });
+    req.on("error", () => resolve({}));
+  });
+}
+
+export function sendApiResponse(res: any, status: number, data: any) {
+  res.setHeader?.("Access-Control-Allow-Credentials", "true");
+  res.setHeader?.("Access-Control-Allow-Origin", "*");
+  res.setHeader?.("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
+  res.setHeader?.(
+    "Access-Control-Allow-Headers",
+    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+  );
+
+  if (typeof res.status === "function" && typeof res.json === "function") {
+    return res.status(status).json(data);
+  }
+  res.statusCode = status;
+  res.setHeader?.("Content-Type", "application/json");
+  res.end(JSON.stringify(data));
+}
+
 // Helper to get Gemini Client lazily
 let geminiClient: GoogleGenAI | null = null;
 export function getGeminiClient(): GoogleGenAI {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("GEMINI_API_KEY environment variable is missing.");
+    throw new Error("GEMINI_API_KEY environment variable is not configured. Please add GEMINI_API_KEY in your Vercel Project Settings > Environment Variables.");
   }
   if (!geminiClient) {
     geminiClient = new GoogleGenAI({
@@ -256,11 +311,11 @@ export async function callGeminiTriage(messages: string[]): Promise<TriagedMessa
 
 export async function processTriageRun(messages: string[], rawString: string) {
   const triagedPayloads = await callGeminiTriage(messages);
-  const runId = crypto.randomUUID();
+  const runId = generateUUID();
   const createdAt = new Date().toISOString();
 
   const formattedMessages = triagedPayloads.map((msg) => ({
-    id: crypto.randomUUID(),
+    id: generateUUID(),
     run_id: runId,
     original_message: msg.original_message,
     priority: msg.priority,

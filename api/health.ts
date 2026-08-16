@@ -1,3 +1,9 @@
-export default function handler(_req: any, res: any) {
-  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+import { sendApiResponse } from "../src/lib/triageCore";
+
+export default function handler(req: any, res: any) {
+  sendApiResponse(res, 200, {
+    status: "ok",
+    app: "Smart Inbox Triage",
+    timestamp: new Date().toISOString(),
+  });
 }
