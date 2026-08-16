@@ -35,55 +35,92 @@ export function generateUUID(): string {
 }
 
 export async function parseJsonBody(req: any): Promise<any> {
-  if (req.body) {
-    if (typeof req.body === "string") {
-      try {
-        return JSON.parse(req.body);
-      } catch {
-        return {};
+  try {
+    if (req.body !== undefined && req.body !== null) {
+      if (typeof req.body === "object") {
+        return req.body;
       }
+      if (typeof req.body === "string" && req.body.trim()) {
+        try {
+          return JSON.parse(req.body);
+        } catch {
+          return {};
+        }
+      }
+      return {};
     }
-    return req.body;
-  }
-  return new Promise((resolve) => {
-    let data = "";
-    req.on("data", (chunk: any) => {
-      data += chunk;
-    });
-    req.on("end", () => {
-      try {
-        resolve(data ? JSON.parse(data) : {});
-      } catch {
+
+    if (req.readableEnded || req.complete || !req.readable) {
+      return {};
+    }
+
+    return await new Promise((resolve) => {
+      let data = "";
+      const timer = setTimeout(() => resolve({}), 2000);
+      req.on("data", (chunk: any) => {
+        data += chunk;
+      });
+      req.on("end", () => {
+        clearTimeout(timer);
+        try {
+          resolve(data ? JSON.parse(data) : {});
+        } catch {
+          resolve({});
+        }
+      });
+      req.on("error", () => {
+        clearTimeout(timer);
         resolve({});
-      }
+      });
     });
-    req.on("error", () => resolve({}));
-  });
+  } catch {
+    return {};
+  }
 }
 
 export function sendApiResponse(res: any, status: number, data: any) {
-  res.setHeader?.("Access-Control-Allow-Credentials", "true");
-  res.setHeader?.("Access-Control-Allow-Origin", "*");
-  res.setHeader?.("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
-  res.setHeader?.(
-    "Access-Control-Allow-Headers",
-    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
-  );
+  try {
+    if (!res.headersSent) {
+      res.setHeader?.("Access-Control-Allow-Credentials", "true");
+      res.setHeader?.("Access-Control-Allow-Origin", "*");
+      res.setHeader?.("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
+      res.setHeader?.(
+        "Access-Control-Allow-Headers",
+        "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+      );
+      res.setHeader?.("Content-Type", "application/json");
+    }
 
-  if (typeof res.status === "function" && typeof res.json === "function") {
-    return res.status(status).json(data);
+    if (typeof res.status === "function") {
+      res.status(status);
+      if (typeof res.json === "function") {
+        return res.json(data);
+      }
+    } else {
+      res.statusCode = status;
+    }
+    return res.end(JSON.stringify(data));
+  } catch (err) {
+    console.error("Failed to send API response:", err);
+    try {
+      res.statusCode = status;
+      res.end(JSON.stringify(data));
+    } catch {}
   }
-  res.statusCode = status;
-  res.setHeader?.("Content-Type", "application/json");
-  res.end(JSON.stringify(data));
 }
 
 // Helper to get Gemini Client lazily
 let geminiClient: GoogleGenAI | null = null;
 export function getGeminiClient(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.VITE_GEMINI_API_KEY;
+
   if (!apiKey) {
-    throw new Error("GEMINI_API_KEY environment variable is not configured. Please add GEMINI_API_KEY in your Vercel Project Settings > Environment Variables.");
+    throw new Error(
+      "GEMINI_API_KEY is not configured. Please add GEMINI_API_KEY in your Vercel Project Settings > Environment Variables, then Redeploy."
+    );
   }
   if (!geminiClient) {
     geminiClient = new GoogleGenAI({
