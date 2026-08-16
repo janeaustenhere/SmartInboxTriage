@@ -1,0 +1,7 @@
+{
+  "name": "Smart Inbox Triage",
+  "description": "Logistics operations triage dashboard powered by Gemini AI and Supabase to prioritize messages, generate draft replies, and streamline morning logistics communications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
