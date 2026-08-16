@@ -7,7 +7,7 @@ import {
   getConfigStatus,
   getHistoryList,
   getHistoryItem,
-} from "./src/lib/triageCore";
+} from "./api/_triageCore";
 
 dotenv.config();
 

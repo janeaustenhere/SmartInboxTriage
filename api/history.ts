@@ -1,4 +1,4 @@
-import { getHistoryList, getHistoryItem, sendApiResponse } from "../src/lib/triageCore";
+import { getHistoryList, getHistoryItem, sendApiResponse } from "./_triageCore";
 
 export default async function handler(req: any, res: any) {
   if (req.method === "OPTIONS") {

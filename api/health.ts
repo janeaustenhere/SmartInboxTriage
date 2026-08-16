@@ -1,4 +1,4 @@
-import { sendApiResponse } from "../src/lib/triageCore";
+import { sendApiResponse } from "./_triageCore";
 
 export default function handler(req: any, res: any) {
   sendApiResponse(res, 200, {

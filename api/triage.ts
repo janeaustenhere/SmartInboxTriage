@@ -1,4 +1,4 @@
-import { processTriageRun, parseJsonBody, sendApiResponse } from "../src/lib/triageCore";
+import { processTriageRun, parseJsonBody, sendApiResponse } from "./_triageCore";
 
 export default async function handler(req: any, res: any) {
   if (req.method === "OPTIONS") {
