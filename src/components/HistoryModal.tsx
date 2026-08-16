@@ -28,9 +28,14 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
     try {
       const res = await fetch('/api/history');
       if (res.ok) {
-        const data = await res.json();
-        setRuns(data.runs || []);
-        setSource(data.source || 'local_cache');
+        const text = await res.text();
+        try {
+          const data = JSON.parse(text);
+          setRuns(data.runs || []);
+          setSource(data.source || 'local_cache');
+        } catch {
+          // ignore non-json response
+        }
       }
     } catch (e) {
       console.warn('Failed to load history:', e);

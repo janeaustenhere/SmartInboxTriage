@@ -34,9 +34,19 @@ export default function App() {
   // Check config on load
   useEffect(() => {
     fetch('/api/config')
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) return null;
+        const text = await res.text();
+        try {
+          return JSON.parse(text);
+        } catch {
+          return null;
+        }
+      })
       .then((data) => {
-        setHasSupabase(!!data.hasSupabase);
+        if (data) {
+          setHasSupabase(!!data.hasSupabase);
+        }
       })
       .catch((e) => console.warn('Could not fetch config:', e));
   }, []);
@@ -59,7 +69,15 @@ export default function App() {
         }),
       });
 
-      const data: AnalyzeResponse = await response.json();
+      const responseText = await response.text();
+      let data: AnalyzeResponse;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        throw new Error(
+          `Server returned an invalid response (${response.status} ${response.statusText}). If deploying on Vercel, ensure the API routes or vercel.json is deployed.`
+        );
+      }
 
       if (!response.ok || data.error) {
         throw new Error(data.error || 'Failed to triage messages. Please try again.');
@@ -96,7 +114,8 @@ export default function App() {
     try {
       const res = await fetch(`/api/history/${runId}`);
       if (!res.ok) throw new Error('Could not load specified triage run.');
-      const data = await res.json();
+      const text = await res.text();
+      const data = JSON.parse(text);
       const sorted = sortMessagesByPriority(data.messages);
       setMessages(sorted);
       setActiveRunId(data.id);
